@@ -1,43 +1,43 @@
 import re
 import sys
 
-def analisar(caminho):
+def analyze(path):
 
-    contagem = {}
-    ignoradas = 0
-    eventos = 0
-    alertas = []
+    failures_by_ip = {}
+    ignored = 0
+    events = 0
+    alerts = []
 
-    with open(caminho) as arquivo:
-        for linha in arquivo:
-            busca = re.search(r"(Failed|Accepted)", linha)
-            if busca is None:
-                ignoradas += 1
+    with open(path) as log_file:
+        for line in log_file:
+            match = re.search(r"(Failed|Accepted)", line)
+            if match is None:
+                ignored += 1
                 continue
-            resultado = busca.group(1)
+            outcome = match.group(1)
         
-            ip = re.search(r"\d+\.\d+\.\d+\.\d+", linha).group()
-            usuario = re.search(r"(\S+) from", linha).group(1) 
-            eventos += 1
-            if resultado == "Failed":
-                if ip in contagem:
-                    contagem[ip] += 1
+            ip = re.search(r"\d+\.\d+\.\d+\.\d+", line).group()
+            user = re.search(r"(\S+) from", line).group(1) 
+            events += 1
+            if outcome == "Failed":
+                if ip in failures_by_ip:
+                    failures_by_ip[ip] += 1
                 else:
-                    contagem[ip] = 1
+                    failures_by_ip[ip] = 1
             else:
-                if ip in contagem:
-                    alertas.append(f"[ALERTA] Login com sucesso de {usuario} vindo de {ip}, que já tinha falhado antes")
+                if ip in failures_by_ip:
+                    alerts.append(f"[ALERT] Successful login by {user} from {ip}, after a previous failed attempt")
 
-    limite = 3
-    for ip, total in contagem.items():
-        if total >= limite:
-            alertas.append(f"[ALERTA] Possível brute force de {ip} ({total} falhas)")
-    return {"eventos": eventos, "ignoradas": ignoradas, "alertas": alertas}
+    threshold = 3
+    for ip, total in failures_by_ip.items():
+        if total >= threshold:
+            alerts.append(f"[ALERT] Possible Brute Force from {ip} ({total} failed attempts)")
+    return {"events": events, "ignored": ignored, "alerts": alerts}
 
 if len(sys.argv) < 2:
-    sys.exit("Uso: python3 analyzer_v2.py <arquivo_de_log>")
+    sys.exit("Uso: python3 analyzer_v2.py <log_file>")
 
-relatorio = analisar(sys.argv[1])
-for alerta in relatorio["alertas"]:
-    print(alerta)
-print(f"Eventos:{relatorio["eventos"]} Ignoradas:{relatorio["ignoradas"]}")
+report = analyze(sys.argv[1])
+for alert in report["alerts"]:
+    print(alert)
+print(f"Events:{report['events']} Ignored:{report['ignored']}")
