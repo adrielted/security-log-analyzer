@@ -34,10 +34,11 @@ def analyze(path):
             alerts.append(f"[ALERT] Possible Brute Force from {ip} ({total} failed attempts)")
     return {"events": events, "ignored": ignored, "alerts": alerts}
 
-if len(sys.argv) < 2:
-    sys.exit("Uso: python3 analyzer_v2.py <log_file>")
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        sys.exit("Usage: python3 analyzer_v2.py <log_file>")
 
-report = analyze(sys.argv[1])
-for alert in report["alerts"]:
-    print(alert)
-print(f"Events:{report['events']} Ignored:{report['ignored']}")
+    report = analyze(sys.argv[1])
+    for alert in report["alerts"]:
+        print(alert)
+    print(f"Events:{report['events']} Ignored:{report['ignored']}")
