@@ -1,3 +1,5 @@
+import smtplib
+import os
 import re
 import sys
 from email.message import EmailMessage
@@ -37,8 +39,8 @@ def analyze(path):
 
 def build_email(report, path):
     msg = EmailMessage()
-    msg["From"] = "analyzer_v2@example.com"
-    msg["To"] = "iamsec@example.com"
+    msg["From"] = os.environ.get("GMAIL_USER", "analyzer_v2@example.com")
+    msg["To"] = os.environ.get("ALERT_TO", "iamsec@example.com")
     if len(report["alerts"]) >= 1:
         msg["Subject"] = f"[ALERT] {len(report['alerts'])} security alerts in {path}"
         body = f"The security analyzer has detected alerts in the last scan of {path}.\n"
@@ -60,6 +62,17 @@ def build_email(report, path):
     msg.set_content(body)
     return msg
 
+def send_email(msg):
+    user = os.environ["GMAIL_USER"]
+    password = os.environ["GMAIL_APP_PASSWORD"]
+    with smtplib.SMTP("smtp.gmail.com", 587) as server:
+        server.starttls()
+    # Gmail drops AUTH PLAIN from this client; force AUTH LOGIN
+        server.ehlo()
+        server.esmtp_features["auth"] = "LOGIN"
+        server.login(user, password)
+        server.send_message(msg)
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         sys.exit("Usage: python3 analyzer_v2.py <log_file>")
@@ -68,4 +81,11 @@ if __name__ == "__main__":
     for alert in report["alerts"]:
         print(alert)
     print(f"Events:{report['events']} Ignored:{report['ignored']}")
-    print(build_email(report, sys.argv[1]))
+    msg = build_email(report, sys.argv[1])
+    if "--send" in sys.argv:
+        send_email(msg)
+        print("Email sent.")
+    else: 
+        print(msg)
+        
+    
