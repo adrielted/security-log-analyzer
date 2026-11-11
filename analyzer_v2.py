@@ -1,5 +1,6 @@
 import re
 import sys
+from email.message import EmailMessage
 
 def analyze(path):
 
@@ -34,6 +35,31 @@ def analyze(path):
             alerts.append(f"[ALERT] Possible Brute Force from {ip} ({total} failed attempts)")
     return {"events": events, "ignored": ignored, "alerts": alerts}
 
+def build_email(report, path):
+    msg = EmailMessage()
+    msg["From"] = "analyzer_v2@example.com"
+    msg["To"] = "iamsec@example.com"
+    if len(report["alerts"]) >= 1:
+        msg["Subject"] = f"[ALERT] {len(report['alerts'])} security alerts in {path}"
+        body = f"The security analyzer has detected alerts in the last scan of {path}.\n"
+        body += "\n"
+        body += "Please check below:\n"
+        body += "\n"
+        body += f"Events: {report['events']}, Ignored: {report['ignored']}\n"  
+        body += "\n"
+        for alert in (report["alerts"]):
+            body += alert + "\n"
+    else:
+        msg["Subject"] = f"[OK] No security alerts in {path}"
+        body = f"The security analyzer has not detected alerts in the last scan of {path}.\n"
+        body += "\n"
+        body += "Summary:\n"
+        body += "\n"
+        body += f"Events: {report['events']}, Ignored: {report['ignored']}\n"
+        
+    msg.set_content(body)
+    return msg
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         sys.exit("Usage: python3 analyzer_v2.py <log_file>")
@@ -42,3 +68,4 @@ if __name__ == "__main__":
     for alert in report["alerts"]:
         print(alert)
     print(f"Events:{report['events']} Ignored:{report['ignored']}")
+    print(build_email(report, sys.argv[1]))
