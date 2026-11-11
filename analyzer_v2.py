@@ -39,7 +39,7 @@ def analyze(path):
 
 def build_email(report, path):
     msg = EmailMessage()
-    msg["From"] = os.environ.get("GMAIL_USER", "analyzer_v2@example.com")
+    msg["From"] = os.environ.get("ALERT_FROM", "analyzer_v2@example.com")
     msg["To"] = os.environ.get("ALERT_TO", "iamsec@example.com")
     if len(report["alerts"]) >= 1:
         msg["Subject"] = f"[ALERT] {len(report['alerts'])} security alerts in {path}"
@@ -63,11 +63,13 @@ def build_email(report, path):
     return msg
 
 def send_email(msg):
-    user = os.environ["GMAIL_USER"]
-    password = os.environ["GMAIL_APP_PASSWORD"]
-    with smtplib.SMTP("smtp.gmail.com", 587) as server:
+    user = os.environ["SMTP_USER"]
+    password = os.environ["SMTP_PASSWORD"]
+    host = os.environ["SMTP_HOST"]
+    port = int(os.environ["SMTP_PORT"])
+    with smtplib.SMTP(host, port) as server:
         server.starttls()
-    # Gmail drops AUTH PLAIN from this client; force AUTH LOGIN
+    # Some servers (e.g. Gmail) drop AUTH PLAIN from this client; force AUTH LOGIN.
         server.ehlo()
         server.esmtp_features["auth"] = "LOGIN"
         server.login(user, password)
