@@ -1,5 +1,5 @@
 import unittest
-from analyzer_v2 import analyze
+from analyzer import analyze
 
 
 class TestAnalyzer(unittest.TestCase):
